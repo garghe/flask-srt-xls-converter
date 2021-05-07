@@ -7,7 +7,7 @@ A simple Flask web application that:
 3. Compress them
 4. Send them via email, using Sendgrid
 
-##How to Run
+## How to Run
 1. Clone the repo
 2. Copy .env_template to .env and set:
    1. SENDGRID_SECRET (You'll need to get a Sendgrid account first and create an API KEY)
