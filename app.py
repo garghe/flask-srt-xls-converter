@@ -35,7 +35,7 @@ def process():
         # check if the post request has the file part
         if 'file' not in request.files:
             app.logger.info('No file part')
-            return redirect(request.url)
+            return render_template('error.html')
 
         if not os.path.exists(OUTPUT_FOLDER):
             os.mkdir(OUTPUT_FOLDER)
@@ -44,8 +44,11 @@ def process():
             os.mkdir(OUTPUT_FOLDER_ARCHIVE)
 
         for f in request.files.getlist('file'):
-            f.save(os.path.join(UPLOAD_FOLDER, f.filename))
-            convert(input_filename=UPLOAD_FOLDER + '/' + f.filename, output_filename='output/' + f.filename + '.xls')
+            if allowed_file(f.filename):
+                f.save(os.path.join(UPLOAD_FOLDER, f.filename))
+                convert(input_filename=UPLOAD_FOLDER + '/' + f.filename, output_filename='output/' + f.filename + '.xls')
+            else:
+                return render_template('error.html')
 
         zip_filename = 'output_' + str(int(time.time())) + '.zip'
         shutil.make_archive(zip_filename, 'zip', 'output')
