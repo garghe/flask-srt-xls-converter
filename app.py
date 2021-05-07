@@ -1,38 +1,28 @@
 import base64
-import logging
 import os
 import re
 import shutil
 import time
-import sys
-import codecs
-
-from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import (Mail, Attachment, FileContent, FileName, FileType, Disposition)
 
 import xlsxwriter
 from flask import Flask, render_template, request, redirect
-
-ALLOWED_EXTENSIONS = {'srt'}
-OUTPUT_FOLDER = 'output'
-OUTPUT_FOLDER_ARCHIVE = 'archives'
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import (Mail, Attachment, FileContent, FileName, FileType, Disposition)
 
 app = Flask(__name__)
 app.config.from_pyfile('settings.py')
 app.secret_key = 'YOUR KEY'
 
-
+ALLOWED_EXTENSIONS = {'srt'}
+OUTPUT_FOLDER = 'output'
+OUTPUT_FOLDER_ARCHIVE = 'archives'
 UPLOAD_FOLDER = app.config.get("UPLOAD_FOLDER")
 FROM_EMAIL = app.config.get("FROM_EMAIL")
-TO_EMAIL= app.config.get("TO_EMAIL")
-
-app.logger.info(UPLOAD_FOLDER)
+TO_EMAIL = app.config.get("TO_EMAIL")
 
 
 
-def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 
 @app.route('/')
 def index():
@@ -41,7 +31,6 @@ def index():
 
 @app.route('/process', methods=('GET', 'POST'))
 def process():
-
     if request.method == 'POST':
         # check if the post request has the file part
         if 'file' not in request.files:
@@ -56,7 +45,7 @@ def process():
 
         for f in request.files.getlist('file'):
             f.save(os.path.join(UPLOAD_FOLDER, f.filename))
-            convert(input_filename= UPLOAD_FOLDER + '/' + f.filename, output_filename='output/' + f.filename +'.xls')
+            convert(input_filename=UPLOAD_FOLDER + '/' + f.filename, output_filename='output/' + f.filename + '.xls')
 
         zip_filename = 'output_' + str(int(time.time())) + '.zip'
         shutil.make_archive(zip_filename, 'zip', 'output')
@@ -64,9 +53,9 @@ def process():
         shutil.rmtree(OUTPUT_FOLDER)
 
         message = Mail(from_email=FROM_EMAIL,
-                        to_emails=TO_EMAIL,
-                        subject='Here is your information',
-                        html_content='<strong>Please find information attached.</strong>')
+                       to_emails=TO_EMAIL,
+                       subject='Here is your information',
+                       html_content='<strong>Please find information attached.</strong>')
 
         with open(zip_filename + '.zip', 'rb') as f:
             data = f.read()
@@ -81,7 +70,6 @@ def process():
         )
         message.attachment = attachedFile
 
-
         sendgrid_key = app.config.get("SENDGRID_SECRET")
         sg = SendGridAPIClient(sendgrid_key)
         response = sg.send(message)
@@ -89,14 +77,17 @@ def process():
         return render_template('processed.html')
 
 
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 
 def parse_subtitles(lines):
-
     line_index = re.compile('^\d*$')
     line_timestamp = re.compile('^\d{2}:\d{2}:\d{2},\d{3} --> \d{2}:\d{2}:\d{2},\d{3}$')
     line_separator = re.compile('^\s*$')
 
-    current_record = {'index':None, 'timestamp':None, 'subtitles':[]}
+    current_record = {'index': None, 'timestamp': None, 'subtitles': []}
     state = 'seeking to next entry'
 
     for line in lines:
@@ -122,7 +113,7 @@ def parse_subtitles(lines):
                 app.logger.debug('Blank line reached, yielding record: {r}'.format(r=current_record))
                 yield current_record
                 state = 'seeking to next entry'
-                current_record = {'index':None, 'timestamp':None, 'subtitles':[]}
+                current_record = {'index': None, 'timestamp': None, 'subtitles': []}
             else:
                 app.logger.debug('Appending to subtitle: {s}'.format(s=line))
                 current_record['subtitles'].append(line)
@@ -133,47 +124,51 @@ def parse_subtitles(lines):
         # We must have finished the file without encountering a blank line. Dump the last record
         yield current_record
 
+
 def write_dict_to_worksheet(columns_for_keys, keyed_data, worksheet, row):
     """
     Write a subtitle-record to a worksheet.
     Return the row number after those that were written (since this may write multiple rows)
     """
     current_row = row
-    #First, horizontally write the entry and timecode
+    # First, horizontally write the entry and timecode
     for (colname, colindex) in columns_for_keys.items():
         if colname != 'subtitles':
             worksheet.write(current_row, colindex, keyed_data[colname])
 
-    #Next, vertically write the subtitle data
+    # Next, vertically write the subtitle data
     subtitle_column = columns_for_keys['subtitles']
-    #for morelines in keyed_data['subtitles']:
+    # for morelines in keyed_data['subtitles']:
 
     subs = ''
 
     for sub in keyed_data['subtitles']:
-         subs+= sub + '\n'
-
+        subs += sub + '\n'
 
     worksheet.write(current_row, subtitle_column, subs.rstrip())
-    current_row+=1
+    current_row += 1
 
     return current_row
 
-def convert(input_filename, output_filename):
 
+def convert(input_filename, output_filename):
     workbook = xlsxwriter.Workbook(output_filename)
     worksheet = workbook.add_worksheet('subtitles')
-    columns = {'index':0, 'timestamp':1, 'subtitles':2}
+    columns = {'index': 0, 'timestamp': 1, 'subtitles': 2}
 
     next_available_row = 0
     records_processed = 0
-    headings = {'index':"Entries", 'timestamp':"Timecodes", 'subtitles':["Subtitles"]}
-    next_available_row=write_dict_to_worksheet(columns, headings, worksheet, next_available_row)
+    headings = {'index': "Entries", 'timestamp': "Timecodes", 'subtitles': ["Subtitles"]}
+    next_available_row = write_dict_to_worksheet(columns, headings, worksheet, next_available_row)
 
     with open(input_filename, encoding='utf8') as textfile:
         for record in parse_subtitles(textfile):
             next_available_row = write_dict_to_worksheet(columns, record, worksheet, next_available_row)
             records_processed += 1
 
-    app.logger.info('Done converting {inp} to {outp}. {n} subtitle entries found. {m} rows written'.format(inp=input_filename, outp=output_filename, n=records_processed, m=next_available_row))
+    app.logger.info(
+        'Done converting {inp} to {outp}. {n} subtitle entries found. {m} rows written'.format(inp=input_filename,
+                                                                                               outp=output_filename,
+                                                                                               n=records_processed,
+                                                                                               m=next_available_row))
     workbook.close()
