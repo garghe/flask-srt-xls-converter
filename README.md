@@ -16,18 +16,5 @@ A simple Flask web application that:
    4. TO_EMAIL, the email address destination
 3. Execute `flask run` - webapp will start on http://127.0.0.1:8080
 
-## Source 
-
-#### SRT Subtitles example:
-
-1
-00:00:22,200 --> 00:00:27,080
-Sub1 - Line 1
-Sub1 - Line 2
-
-2
-00:00:27,160 --> 00:00:29,640
-Sub 2 - Line 1
-
 
 
