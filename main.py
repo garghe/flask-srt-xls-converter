@@ -21,7 +21,7 @@ OUTPUT_FOLDER_ARCHIVE = 'archives'
 
 app = Flask(__name__)
 app.config.from_pyfile('settings.py')
-app.secret_key = 'marcog'
+app.secret_key = 'YOUR KEY'
 
 
 UPLOAD_FOLDER = app.config.get("UPLOAD_FOLDER")

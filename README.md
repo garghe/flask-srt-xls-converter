@@ -12,6 +12,8 @@ A simple Flask web application that:
 2. Copy .env_template to .env and set:
    1. SENDGRID_SECRET (You'll need to get a Sendgrid account first and create an API KEY)
    2. UPLOAD_FOLDER, local folder where the files will be uploaded
+   3. FROM_EMAIL, the email  originator
+   4. TO_EMAIL, the email address destination
 3. Execute `flask run` - webapp will start on http://127.0.0.1:8080
 
 
