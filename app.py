@@ -17,7 +17,6 @@ ALLOWED_EXTENSIONS = {'srt'}
 OUTPUT_FOLDER = 'output'
 OUTPUT_FOLDER_ARCHIVE = 'archives'
 
-
 app = Flask(__name__)
 app.config.from_pyfile('settings.py')
 app.secret_key = 'YOUR KEY'
