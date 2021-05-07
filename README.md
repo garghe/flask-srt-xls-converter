@@ -30,10 +30,4 @@ Sub1 - Line 2
 Sub 2 - Line 1
 
 
-#### Excel output 
-
-| Index | Cue-in --> Cue-out            |   Subtitle      |
-|   1   | 00:00:22,200 --> 00:00:27,080 | Sub1 - Line 1   |
-|       |                               | Sub1 - Line 2   | 
-|   2   | 00:00:27,160 --> 00:00:29,640 | Sub2 - Line 1   | 
 
