@@ -10,7 +10,6 @@ import codecs
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import (Mail, Attachment, FileContent, FileName, FileType, Disposition)
 
-
 import xlsxwriter
 from flask import Flask, render_template, request, redirect
 
