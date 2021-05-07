@@ -40,7 +40,6 @@ def index():
 def process():
 
     if request.method == 'POST':
-        app.logger.info('LOGGGG')
         # check if the post request has the file part
         if 'file' not in request.files:
             app.logger.info('No file part')
@@ -83,7 +82,7 @@ def process():
         sendgrid_key = app.config.get("SENDGRID_SECRET")
         sg = SendGridAPIClient(sendgrid_key)
         response = sg.send(message)
-        print(response.status_code, response.body, response.headers)
+        app.logger.info(response.status_code, response.body, response.headers)
 
         return render_template('processed.html')
 
@@ -102,32 +101,32 @@ def parse_subtitles(lines):
         line = line.strip('\n')
         if state == 'seeking to next entry':
             if line_index.match(line):
-                logging.debug('Found index: {i}'.format(i=line))
+                app.logger.debug('Found index: {i}'.format(i=line))
                 current_record['index'] = line
                 state = 'looking for timestamp'
             else:
-                logging.error('HUH: Expected to find an index, but instead found: [{d}]'.format(d=line))
+                app.logger.debug('HUH: Expected to find an index, but instead found: [{d}]'.format(d=line))
 
         elif state == 'looking for timestamp':
             if line_timestamp.match(line):
-                logging.debug('Found timestamp: {t}'.format(t=line))
+                app.logger.debug('Found timestamp: {t}'.format(t=line))
                 current_record['timestamp'] = line
                 state = 'reading subtitles'
             else:
-                logging.error('HUH: Expected to find a timestamp, but instead found: [{d}]'.format(d=line))
+                app.logger.debug('HUH: Expected to find a timestamp, but instead found: [{d}]'.format(d=line))
 
         elif state == 'reading subtitles':
             if line_separator.match(line):
-                logging.info('Blank line reached, yielding record: {r}'.format(r=current_record))
+                app.logger.debug('Blank line reached, yielding record: {r}'.format(r=current_record))
                 yield current_record
                 state = 'seeking to next entry'
                 current_record = {'index':None, 'timestamp':None, 'subtitles':[]}
             else:
-                logging.debug('Appending to subtitle: {s}'.format(s=line))
+                app.logger.debug('Appending to subtitle: {s}'.format(s=line))
                 current_record['subtitles'].append(line)
 
         else:
-            logging.error('HUH: Fell into an unknown state: `{s}`'.format(s=state))
+            app.logger.debug('HUH: Fell into an unknown state: `{s}`'.format(s=state))
     if state == 'reading subtitles':
         # We must have finished the file without encountering a blank line. Dump the last record
         yield current_record
