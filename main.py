@@ -14,16 +14,21 @@ from sendgrid.helpers.mail import (Mail, Attachment, FileContent, FileName, File
 import xlsxwriter
 from flask import Flask, render_template, request, redirect
 
-UPLOAD_FOLDER = '/Users/marcogarghentin/Workspace/flask-test/uploads'
 ALLOWED_EXTENSIONS = {'srt'}
 OUTPUT_FOLDER = 'output'
 OUTPUT_FOLDER_ARCHIVE = 'archives'
 
 
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.secret_key = 'marcog'
 app.config.from_pyfile('settings.py')
+app.secret_key = 'marcog'
+
+
+UPLOAD_FOLDER = app.config.get("UPLOAD_FOLDER")
+FROM_EMAIL = app.config.get("FROM_EMAIL")
+TO_EMAIL= app.config.get("TO_EMAIL")
+
+app.logger.info(UPLOAD_FOLDER)
 
 
 
@@ -51,8 +56,10 @@ def process():
         if not os.path.exists(OUTPUT_FOLDER_ARCHIVE):
             os.mkdir(OUTPUT_FOLDER_ARCHIVE)
 
+        app.logger.info("adadas " + UPLOAD_FOLDER)
+
         for f in request.files.getlist('file'):
-            f.save(os.path.join(app.config['UPLOAD_FOLDER'], f.filename))
+            f.save(os.path.join(UPLOAD_FOLDER, f.filename))
             convert(input_filename='uploads/' + f.filename, output_filename='output/' + f.filename +'.xls')
 
         zip_filename = 'output_' + str(int(time.time())) + '.zip'
@@ -60,10 +67,10 @@ def process():
 
         shutil.rmtree(OUTPUT_FOLDER)
 
-        message = Mail(from_email='marco.garghentini@iyunomg.com',
-                        to_emails='marco.garghentini@iyunomg.com',
-                        subject='Test email',
-                        html_content='<strong>and easy to do anywhere, even with Python</strong>')
+        message = Mail(from_email=FROM_EMAIL,
+                        to_emails=TO_EMAIL,
+                        subject='Here is your information',
+                        html_content='<strong>Please find information attached.</strong>')
 
         with open(zip_filename + '.zip', 'rb') as f:
             data = f.read()
