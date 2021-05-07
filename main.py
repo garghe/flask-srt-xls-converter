@@ -56,11 +56,9 @@ def process():
         if not os.path.exists(OUTPUT_FOLDER_ARCHIVE):
             os.mkdir(OUTPUT_FOLDER_ARCHIVE)
 
-        app.logger.info("adadas " + UPLOAD_FOLDER)
-
         for f in request.files.getlist('file'):
             f.save(os.path.join(UPLOAD_FOLDER, f.filename))
-            convert(input_filename='uploads/' + f.filename, output_filename='output/' + f.filename +'.xls')
+            convert(input_filename= UPLOAD_FOLDER + '/' + f.filename, output_filename='output/' + f.filename +'.xls')
 
         zip_filename = 'output_' + str(int(time.time())) + '.zip'
         shutil.make_archive(zip_filename, 'zip', 'output')
@@ -89,7 +87,6 @@ def process():
         sendgrid_key = app.config.get("SENDGRID_SECRET")
         sg = SendGridAPIClient(sendgrid_key)
         response = sg.send(message)
-        app.logger.info(response.status_code, response.body, response.headers)
 
         return render_template('processed.html')
 
